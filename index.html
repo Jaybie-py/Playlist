@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spotify Style Player</title>
+
+<style>
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(
+        120deg,
+        #1db954,
+        #0f2027,
+        #203a43,
+        #2c5364
+    );
+    background-size: 400% 400%;
+    animation: gradientMove 15s ease infinite;
+    z-index: -2;
+    opacity: 0.6;
+}
+
+@keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* subtle dark overlay for readability */
+body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: -1;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Segoe UI", sans-serif;
+}
+
+body {
+    background: #121212;
+    color: #fff;
+}
+
+/* CONTAINER */
+.container {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 20px;
+}
+
+/* HEADER */
+.playlist-header {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.playlist-cover {
+    width: 200px;
+    height: 200px;
+    background: linear-gradient(135deg, #1db954, #0f4c2a);
+    border-radius: 10px;
+}
+
+.playlist-info h1 {
+    font-size: 2.5rem;
+}
+
+.playlist-info p {
+    margin-top: 10px;
+    color: #b3b3b3;
+}
+
+/* SONG LIST */
+.song-list {
+    margin-top: 40px;
+}
+
+.song {
+    display: grid;
+    grid-template-columns: 40px 1fr 80px;
+    padding: 12px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.song:hover {
+    background: #1a1a1a;
+}
+
+.song.active {
+    background: #1db954;
+}
+
+.song-title {
+    font-weight: 500;
+}
+
+.song-artist {
+    font-size: 0.85rem;
+    color: #b3b3b3;
+}
+
+.song.active .song-artist {
+    color: #fff;
+}
+
+/* PLAYER BAR */
+.player {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: #181818;
+    padding: 15px 20px;
+    border-top: 1px solid #282828;
+}
+
+.player-content {
+    max-width: 900px;
+    margin: auto;
+}
+
+.controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.play-btn {
+    background: #1db954;
+    border: none;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+/* PROGRESS BAR */
+.progress-container {
+    margin-top: 10px;
+    background: #404040;
+    height: 5px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.progress {
+    background: #1db954;
+    height: 100%;
+    width: 0%;
+    border-radius: 5px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="playlist-header">
+        <div class="playlist-cover"></div>
+        <div class="playlist-info">
+            <p>PLAYLIST</p>
+            <h1>Chase Atlantic</h1>
+            <p>A playlist for quiet nights.</p>
+        </div>
+    </div>
+
+    <div class="song-list">
+        <div class="song" data-src="Chase Atlantic - HEAVEN AND BACK - CHASE ATLANTIC.mp3">
+            <div>1</div>
+            <div>
+                <div class="song-title">Heaven And Back</div>
+                <div class="song-artist">Chase Atlantic</div>
+            </div>
+            <div>4:08</div>
+        </div>
+
+        <div class="song" data-src="Paradise - Chase Atlantic.mp3">
+            <div>2</div>
+            <div>
+                <div class="song-title">Paradise</div>
+                <div class="song-artist">Chase Atlantic</div>
+            </div>
+            <div>4:16</div>
+        </div>
+
+        <div class="song" data-src="Chase Atlantic - Swim (Lyrics) - Moonlight.mp3">
+            <div>3</div>
+            <div>
+                <div class="song-title">Swim</div>
+                <div class="song-artist">Chase Atlantic</div>
+            </div>
+            <div>3:49</div>
+        </div>
+
+        <div class="song" data-src="Chase Atlantic - Consume (Lyrics) - EZAR studio..mp3">
+            <div>4</div>
+            <div>
+                <div class="song-title">Consume</div>
+                <div class="song-artist">Chase Atlantic</div>
+            </div>
+            <div>4:24</div>
+        </div>
+
+        <div class="song" data-src="Drugs & Money - Chase Atlantic [lyrics] - ravenshanty.mp3">
+            <div>5</div>
+            <div>
+                <div class="song-title">Drugs & Money</div>
+                <div class="song-artist">Chase Atlantic</div>
+            </div>
+            <div>3:58</div>
+        </div>
+    </div>
+
+</div>
+
+<!-- PLAYER -->
+<div class="player">
+    <div class="player-content">
+        <div class="controls">
+            <button class="play-btn" id="playBtn">▶</button>
+            <span id="nowPlaying">Select a song</span>
+        </div>
+
+        <div class="progress-container" id="progressContainer">
+            <div class="progress" id="progress"></div>
+        </div>
+    </div>
+</div>
+
+<audio id="audio"></audio>
+
+<script>
+const songs = document.querySelectorAll(".song");
+const audio = document.getElementById("audio");
+const playBtn = document.getElementById("playBtn");
+const nowPlaying = document.getElementById("nowPlaying");
+const progress = document.getElementById("progress");
+const progressContainer = document.getElementById("progressContainer");
+
+let currentSong = -1;
+
+// CLICK SONG
+songs.forEach((song, index) => {
+    song.addEventListener("click", () => {
+        playSong(index);
+    });
+});
+
+function playSong(index) {
+    songs.forEach(s => s.classList.remove("active"));
+
+    const song = songs[index];
+    song.classList.add("active");
+
+    audio.src = song.dataset.src;
+    audio.play();
+
+    currentSongIndex = index;
+    playBtn.textContent = "⏸";
+    nowPlaying.textContent = song.querySelector(".song-title").textContent;
+}
+
+
+// PLAY / PAUSE
+playBtn.addEventListener("click", () => {
+    if (!audio.src) return;
+
+    if (audio.paused) {
+        audio.play();
+        playBtn.textContent = "⏸";
+    } else {
+        audio.pause();
+        playBtn.textContent = "▶";
+    }
+});
+
+// UPDATE PROGRESS
+audio.addEventListener("timeupdate", () => {
+    const percent = (audio.currentTime / audio.duration) * 100;
+    progress.style.width = percent + "%";
+});
+
+// SEEK
+progressContainer.addEventListener("click", e => {
+    const width = progressContainer.clientWidth;
+    const clickX = e.offsetX;
+    audio.currentTime = (clickX / width) * audio.duration;
+});
+
+audio.addEventListener("ended", () => {
+    currentSongIndex++;
+
+    if (currentSongIndex < songs.length) {
+        playSong(currentSongIndex);
+    } else {
+        // kapag last song na, stop or balik sa una
+        currentSongIndex = 0;
+        playSong(currentSongIndex); // optional: loop playlist
+    }
+});
+
+</script>
+
+</body>
+</html>
